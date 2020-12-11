@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { auth } from './firebase/firebase.utils';
+import { auth, createUserProfileDocument } from './firebase/firebase.utils';
 import { Route, Switch } from 'react-router-dom'
 import HomePage from './components/HomePage'
 import ShopPage from './components/ShopPage';
@@ -23,9 +23,26 @@ class App extends React.Component {
   ubsubscribeFromAuth = null
 
   componentDidMount() {
-    this.ubsubscribeFromAuth = auth.onAuthStateChanged(user => {
-      this.setState({ currentUser: user });
-      console.log(user);
+    this.unsubscribeFromAuth = auth.onAuthStateChanged(async userAuth => {
+      if (userAuth) {
+          const userRef = await createUserProfileDocument(userAuth)
+          
+        
+        //Document snapshot record from out document reference object
+        // allows us to check if a document exists at this query using .exists
+        userRef.onSnapshot(snapshot => {
+          this.setState({
+            currentUser: {
+              id: snapshot.id,
+              ...snapshot.data()
+            }
+          }, () => {
+              console.log(this.state)
+          });
+          })
+      }
+      //set user to null if no userAuth 
+      this.setState({currentUser: userAuth})
     })
   }
 
